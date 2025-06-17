@@ -2,7 +2,7 @@ from django.http import HttpResponseRedirect
 # from django.urls import reverse_lazy
 from django.urls import reverse
 from django.views.generic.edit import CreateView
-from django.views.generic import DetailView, DeleteView, UpdateView, TemplateView, View
+from django.views.generic import DeleteView, UpdateView, TemplateView, View
 # ListView
 from django.contrib.auth.views import LoginView
 # LogoutView
@@ -27,6 +27,10 @@ from .forms import CustomUserCreationForm, CustomUserUpdateForm, UsersControlIni
 # LoginForm, UsersControlForm
 from .mixins import UserIsNotAuthenticated
 from .models import CustomUser, UsersControl
+# from django.views import generic
+from rest_framework import generics
+
+from .serializers import CustomUserSerializer
 
 User = get_user_model()
 
@@ -128,17 +132,28 @@ class RegisterView(UserIsNotAuthenticated, CreateView):
         return redirect('email_confirmation_sent')
 
 
-class UserProfileView(DetailView):
-    model = CustomUser
-    template_name = "user_profile.html"
-    context_object_name = 'user'
-    success_url = reverse_lazy('home')
-
-
+#
+# class UserProfileView(DetailView):
+#     model = CustomUser
+#     template_name = "user_profile.html"
+#     context_object_name = 'user'
+#     success_url = reverse_lazy('home')
+#
+#
 class UserDeleteView(DeleteView):
     model = CustomUser
     success_url = reverse_lazy("home")
     template_name = 'delete_user.html'
+
+
+class CustomUserRetrieveAPIView(generics.RetrieveAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+
+
+class CustomUserUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
 
 
 class UserUpdateView(UpdateView):
