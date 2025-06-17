@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %} {{ user.name }}profile {% endblock %}
+{% block content %}
+
+<div class="container-fluid d-flex border">
+    <div class="row">
+        <div class="col col-6 border border-primary ms-1 text-center">
+            {% if user.avatar %}
+            <img src="{{ user.avatar.url }}"
+                 style="width: 20rem; height:20rem; vertical-align: middle;" alt="img">
+            {% else %}
+            <img src="/media/static/no_image.jpg"
+                 style="height:20rem; vertical-align: middle;" alt="img">
+            {% endif %}
+        </div>
+        <div class="col">
+            <div class="m-2">
+                <h2>{{ user.username }}</h2>
+            </div>
+            <div class="m-2">
+                <h2>{{ user.last_name }} {{ user.first_name }}</h2>
+            </div>
+            <div class="d-flex text-nowrap mb-3">
+                <h3>Эл. почта: {{ user.email }}</h3>
+            </div>
+            <div class="d-flex text-nowrap mb-3">
+                <h3>Телефон: {{ user.phone_number }}</h3>
+            </div>
+            <div class="d-flex text-nowrap mb-3">
+                <h3>Город: {{ user.city }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<button type="button" class="btn btn-lg btn-outline-primary mx-2 px-5 m-3 float-bottom"
+        onClick="javascript:history.go(-1);">Назад
+</button>
+
+<a href="{% url 'edit_user' pk=user.id %}"
+   class="btn btn-lg btn-outline-primary mx-2 px-5 m-3 float-bottom">Изменить</a>
+<a href="{% url 'delete_user' pk=user.id %}"
+   class="btn btn-lg btn-outline-primary mx-2 px-5 m-3 float-bottom">Удалить</a>
+{% endblock %}
