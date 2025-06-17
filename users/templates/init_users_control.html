@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Управление пользователями{% endblock %}
+{% block content %}
+
+<div class="card col col-md-6 px-4 p-3 ms-4 mb-3">
+    <form method="post" class="form-floating" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="fieldWrapper">
+            {{ form.users.errors }}
+            {{ form.users.label_tag }}
+            <p>
+
+            <ul class="nobullet">
+                {% for pk, choice in form.users.field.widget.choices %}
+                <li>
+                    <input
+                            {% for user in users.all %}
+                            {% if user.email == choice and user.is_active %}checked='checked'
+                            {% endif %}
+                            {% endfor %}
+                            name="users" class="custom-checkbox-class" type="checkbox" value="{{ pk }}"
+                            id="id_user_{{forloop.counter0}}">
+                    <label class="form-check-label" for="id_user_{{forloop.counter0}}">
+                        {{ choice }}
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="d-flex container-fluid justify-content-end">
+            <button type="submit" class="btn btn-primary col-5  mx-2 px-5 m-3 ">
+                Сохранить
+            </button>
+            <button type="button" class="btn btn-lg btn-outline-primary mx-2 px-5 m-3 float-bottom"
+                    onClick="javascript:history.go(-1);">Назад
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

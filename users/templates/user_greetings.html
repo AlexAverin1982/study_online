@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %} {{ user.name }}profile {% endblock %}
+{% block content %}
+
+<div class="container-fluid d-flex border">
+    <div class="row">
+        <div class="col col-6 border border-primary ms-1 text-center">
+            <h2>Привет,{{ user.username }}!</h2>
+            <h3>Теперь ты можешь зайти на сайт со своими учетными данными.
+            В качестве логина используй адрес электронной почты, указанной при регистрации</h3>
+        </div>
+    </div>
+</div>
+{% endblock %}
