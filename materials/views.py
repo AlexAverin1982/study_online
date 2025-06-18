@@ -1,18 +1,8 @@
-# from http.client import HTTPResponse
-# from bootstrap_datepicker_plus.widgets import DateTimePickerInput
-# from django.db.transaction import commit
-# from django.forms import CheckboxSelectMultiple, SelectMultiple
-# import django.utils.functional
-from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, get_object_or_404
 from django.views import generic
-from django.urls import reverse_lazy, reverse
-from django.contrib.auth.models import AnonymousUser
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
-from django.core.cache import cache
+from rest_framework import viewsets, generics
 
-from typing_extensions import Any
+from materials.models import Course, Lesson
+from materials.serializers import CourseSerializer, LessonSerializer
 
 
 class HomeView(generic.TemplateView):
@@ -21,3 +11,34 @@ class HomeView(generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+class CourseViewSet(viewsets.ModelViewSet):
+    serializer_class = CourseSerializer
+    queryset = Course.objects.all()
+
+
+##################################################################################################################
+
+class LessonCreateAPIView(generics.CreateAPIView):
+    serializer_class = LessonSerializer
+
+
+class LessonListAPIView(generics.ListAPIView):
+    serializer_class = LessonSerializer
+    queryset = Lesson.objects.all()
+
+
+class LessonRetrieveAPIView(generics.RetrieveAPIView):
+    serializer_class = LessonSerializer
+    queryset = Lesson.objects.all()
+
+
+class LessonUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = LessonSerializer
+    queryset = Lesson.objects.all()
+
+
+class LessonDestroyAPIView(generics.DestroyAPIView):
+    serializer_class = LessonSerializer
+    queryset = Lesson.objects.all()

@@ -61,18 +61,6 @@
         </div>
     </div>
 </div>
-{% if user.is_authenticated %}
-<div class="fixed-bottom">
-    <h4>Число рассылок: {{total_mailings_count}}</h4>
-    <h4>Число активных рассылок: {{active_mailings_count}}</h4>
-    <h4>Число клиентов: {{clients_count}}</h4>
-<!--    <footer>-->
-<!--        {% if active_mailings_count %}-->
-<!--        <h4>Число активных рассылок: {{active_mailings_count}}</h4>-->
-<!--        {% endif %}-->
-<!--    </footer>-->
-</div>
-{% endif %}
 {% endblock %}
 {% block navigation %}
 <nav class="list-pages" style="height:15px">

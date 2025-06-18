@@ -1,11 +1,12 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 # , LoginView
-from .views import (RegisterView, UserProfileView, UserDeleteView,
+from .views import (RegisterView,           # UserProfileView,
+                    UserDeleteView,
                     UserUpdateView, UserLoginView, UserConfirmEmailView,
                     EmailConfirmationSentView, EmailConfirmedView,
                     EmailConfirmationFailedView, UsersControlView, UserForgotPasswordView,
-                    UserPasswordResetConfirmView)
+                    UserPasswordResetConfirmView, CustomUserRetrieveAPIView)
 
 urlpatterns = [
     # path('login/', LoginView.as_view(template_name='login.html', next_page='home'), name='login'),
@@ -13,7 +14,8 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('greetings/<int:pk>', RegisterView.as_view(), name='greetings'),
-    path("profile/<int:pk>/", UserProfileView.as_view(), name="user_profile"),
+    # path("profile/<int:pk>/", UserProfileView.as_view(), name="user_profile"),
+    path("profile/<int:pk>/", CustomUserRetrieveAPIView.as_view(), name="user_profile"),
     path('edit_user/<int:pk>/', UserUpdateView.as_view(), name='edit_user'),
     path("delete_user/<int:pk>/", UserDeleteView.as_view(), name="delete_user"),
     path("control_users/<int:pk>/", UsersControlView.as_view(), name="control_users"),
