@@ -1,0 +1,50 @@
+[
+{
+    "model": "materials.lesson",
+    "pk": 200,
+    "fields": {
+        "name": "Введение. Почему появился JS.",
+        "preview": "",
+        "description": "Определение фронтенда. Назначение JS. Обзор AJAX, JQuery",
+        "seq_number": 1,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 201,
+    "fields": {
+        "name": "Как пишутся программы на JS",
+        "preview": "",
+        "description": "Обзор инструментов разработки. Выбор среды. Инструкции по установке.",
+        "seq_number": 5,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 203,
+    "fields": {
+        "name": "Первые программы на JavaScript",
+        "preview": "",
+        "description": "Структура программы, типы данных, операции с переменными. Ввод и вывод данных.",
+        "seq_number": 7,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 202,
+    "fields": {
+        "name": "Встроенный и внешний код.",
+        "preview": "",
+        "description": "Обзор использования тэга <script> и файлов .js",
+        "seq_number": 6,
+        "video": "",
+        "course": 3
+    }
+}
+]

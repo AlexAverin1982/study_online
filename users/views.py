@@ -52,10 +52,10 @@ class UserLoginView(LoginView):
         if user:
             if user.is_active:
                 login(request, user)
-                return redirect(reverse('home'))
+                return redirect(reverse('materials:home'))
         else:
             messages.error(request, 'Логин или пароль неправильные')
-            return redirect(reverse('home'))
+            return redirect(reverse('materials:home'))
 
 
 """

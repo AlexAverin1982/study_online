@@ -1,5 +1,7 @@
 from django.views import generic
 from rest_framework import viewsets, generics
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from materials.models import Course, Lesson
 from materials.serializers import CourseSerializer, LessonSerializer
@@ -16,6 +18,13 @@ class HomeView(generic.TemplateView):
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
+
+    @action(detail=True, methods=['get'])
+    def lessons(self, request, pk=None):
+        course = self.get_object()
+        lessons = course.Уроки.all()
+        serializer = LessonSerializer(lessons, many=True)
+        return Response(serializer.data)
 
 
 ##################################################################################################################
@@ -42,3 +51,4 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 class LessonDestroyAPIView(generics.DestroyAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
+

@@ -11,7 +11,7 @@ from .views import (RegisterView,           # UserProfileView,
 urlpatterns = [
     # path('login/', LoginView.as_view(template_name='login.html', next_page='home'), name='login'),
     path('login/', UserLoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
+    path('logout/', LogoutView.as_view(next_page='materials:home'), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('greetings/<int:pk>', RegisterView.as_view(), name='greetings'),
     # path("profile/<int:pk>/", UserProfileView.as_view(), name="user_profile"),
