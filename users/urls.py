@@ -1,18 +1,22 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 # , LoginView
-from .views import (RegisterView,           # UserProfileView,
+from .views import (RegisterView,  # UserProfileView,
                     UserDeleteView,
                     UserUpdateView, UserLoginView, UserConfirmEmailView,
                     EmailConfirmationSentView, EmailConfirmedView,
                     EmailConfirmationFailedView, UsersControlView, UserForgotPasswordView,
-                    UserPasswordResetConfirmView, CustomUserRetrieveAPIView)
+                    UserPasswordResetConfirmView, CustomUserRetrieveAPIView, CreatePaymentAPIView,
+                    DeletePaymentAPIView, PaymentsListAPIView)
 
 urlpatterns = [
     # path('login/', LoginView.as_view(template_name='login.html', next_page='home'), name='login'),
     path('login/', UserLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(next_page='materials:home'), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
+    path('payments/', PaymentsListAPIView.as_view(), name='payments'),
+    path('add_payment/', CreatePaymentAPIView.as_view(), name='add_payment'),
+    path('delete_payment/<int:pk>/', DeletePaymentAPIView.as_view(), name='delete_payment'),
     path('greetings/<int:pk>', RegisterView.as_view(), name='greetings'),
     # path("profile/<int:pk>/", UserProfileView.as_view(), name="user_profile"),
     path("profile/<int:pk>/", CustomUserRetrieveAPIView.as_view(), name="user_profile"),

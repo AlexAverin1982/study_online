@@ -1,0 +1,278 @@
+[
+{
+    "model": "materials.lesson",
+    "pk": 1,
+    "fields": {
+        "name": "Что такое программирование и зачем оно нужно?",
+        "preview": "",
+        "description": "Рассказ о том, что делают программисты и зачем нужны программы.",
+        "seq_number": 1,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 2,
+    "fields": {
+        "name": "Что такое алгоритм. Языки программирования",
+        "preview": "",
+        "description": "Определение и примеры алгоритмов. Суть языков программирования. Уровни ЯП.",
+        "seq_number": 2,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 3,
+    "fields": {
+        "name": "Данные и инструкции. Структура программы.",
+        "preview": "",
+        "description": "Из чего состоит программа. Использование компьютерной памяти.",
+        "seq_number": 3,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 4,
+    "fields": {
+        "name": "Переменные и константы. Типы данных.",
+        "preview": "",
+        "description": "Как хранятся данные, используемые программой. Операция присваивания. Операция сравнения.",
+        "seq_number": 4,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 5,
+    "fields": {
+        "name": "Операции с данными. Основные универсальные операнды.",
+        "preview": "",
+        "description": "Сложение и конкатенация. Арифметика. Действия со строкой",
+        "seq_number": 5,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 6,
+    "fields": {
+        "name": "Булев тип. Логические операции.",
+        "preview": "",
+        "description": "Использование булевых значений в программе. Правила вычисления логических выражений.",
+        "seq_number": 6,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 7,
+    "fields": {
+        "name": "Простейшие программы. Ввод и вывод данных.",
+        "preview": "",
+        "description": "Ввод/вывод данных. Сохранение программы. Повторное использование кода.",
+        "seq_number": 7,
+        "video": "",
+        "course": 1
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 100,
+    "fields": {
+        "name": "Введение. Почему появился Питон.",
+        "preview": "",
+        "description": "Определение ЯВУ. Особенности Питона, его предназначение, где он используется и где нет.",
+        "seq_number": 1,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 101,
+    "fields": {
+        "name": "Как пишутся программы на Питоне",
+        "preview": "",
+        "description": "Обзор сред разработки. Выбор среды. Инструкции по установке.",
+        "seq_number": 2,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 102,
+    "fields": {
+        "name": "Пайчарм. Почему он? Первые программы.",
+        "preview": "",
+        "description": "Обзор возможностей Пайчарма. Установка. Демонстрация процесса программирования в Пайчарме",
+        "seq_number": 3,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 103,
+    "fields": {
+        "name": "Режим отладки и другие трюки в Пайчарме",
+        "preview": "",
+        "description": "Обзор приемов для упрощения процесса программирования в Пайчарме.",
+        "seq_number": 4,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 104,
+    "fields": {
+        "name": "Простейшие программы. Переменные. Ввод-вывод",
+        "preview": "",
+        "description": "Написание простых программ в Пайчарме. Создание переменных. Оператор присвоения и оператор равенства. Использование консоли для ввода и вывода данных",
+        "seq_number": 5,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 105,
+    "fields": {
+        "name": "Простые типы данных. Основные операции над данными. Преобразования типов. f-Строки",
+        "preview": "",
+        "description": "Написание программ, использующих различные типы данных. Простая обработка данных (формулы), форматированный вывод данных.",
+        "seq_number": 6,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 106,
+    "fields": {
+        "name": "Ветвления и циклы.",
+        "preview": "",
+        "description": "Использование различных вариантов ветвления и различных вариантов цикла в программах. Бесконечный цикл",
+        "seq_number": 7,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 107,
+    "fields": {
+        "name": "Подпрограммы. Модули. Пакеты.",
+        "preview": "",
+        "description": "Обзор средств для разбиения кода на части для упрощения работы и повторного использования.",
+        "seq_number": 8,
+        "video": "",
+        "course": 2
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 200,
+    "fields": {
+        "name": "Введение. Почему появился JS.",
+        "preview": "",
+        "description": "Определение фронтенда. Назначение JS. Обзор AJAX, JQuery",
+        "seq_number": 1,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 201,
+    "fields": {
+        "name": "Как пишутся программы на JS",
+        "preview": "",
+        "description": "Обзор инструментов разработки. Выбор среды. Инструкции по установке.",
+        "seq_number": 2,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 202,
+    "fields": {
+        "name": "Встроенный и внешний код.",
+        "preview": "",
+        "description": "Обзор использования тэга <script> и файлов .js",
+        "seq_number": 3,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 203,
+    "fields": {
+        "name": "Первые программы на JavaScript",
+        "preview": "",
+        "description": "Структура программы, типы данных, операции с переменными. Ввод и вывод данных.",
+        "seq_number": 4,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 204,
+    "fields": {
+        "name": "Ветвления, циклы. Функции. Объекты.",
+        "preview": "",
+        "description": "Ветвления, циклы. Функции. Объекты.",
+        "seq_number": 5,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 205,
+    "fields": {
+        "name": "Модель Объекта Документа (DOM)",
+        "preview": "",
+        "description": "Модель Объекта Документа (DOM)",
+        "seq_number": 6,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 206,
+    "fields": {
+        "name": "События",
+        "preview": "",
+        "description": "События",
+        "seq_number": 7,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 207,
+    "fields": {
+        "name": "Формы. Расширения форм.",
+        "preview": "",
+        "description": "Формы. Расширения форм.",
+        "seq_number": 8,
+        "video": "",
+        "course": 3
+    }
+}
+]

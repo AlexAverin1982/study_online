@@ -1,0 +1,50 @@
+[
+{
+    "model": "materials.lesson",
+    "pk": 204,
+    "fields": {
+        "name": "Ветвления, циклы. Функции. Объекты.",
+        "preview": "",
+        "description": "Ветвления, циклы. Функции. Объекты.",
+        "seq_number": 5,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 205,
+    "fields": {
+        "name": "Модель Объекта Документа (DOM)",
+        "preview": "",
+        "description": "Модель Объекта Документа (DOM)",
+        "seq_number": 6,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 206,
+    "fields": {
+        "name": "События",
+        "preview": "",
+        "description": "События",
+        "seq_number": 7,
+        "video": "",
+        "course": 3
+    }
+},
+{
+    "model": "materials.lesson",
+    "pk": 207,
+    "fields": {
+        "name": "Формы. Расширения форм.",
+        "preview": "",
+        "description": "Формы. Расширения форм.",
+        "seq_number": 8,
+        "video": "",
+        "course": 3
+    }
+}
+]

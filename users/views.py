@@ -16,6 +16,7 @@ from django.utils.encoding import force_bytes
 from django.contrib.sites.models import Site
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib.auth import get_user_model
+from django_filters.rest_framework import DjangoFilterBackend
 from typing_extensions import Any
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.urls import reverse_lazy
@@ -26,11 +27,12 @@ from .forms import UserSetNewPasswordForm
 from .forms import CustomUserCreationForm, CustomUserUpdateForm, UsersControlInitForm
 # LoginForm, UsersControlForm
 from .mixins import UserIsNotAuthenticated
-from .models import CustomUser, UsersControl
+from .models import CustomUser, UsersControl, Payment
 # from django.views import generic
 from rest_framework import generics
+from rest_framework.filters import OrderingFilter
 
-from .serializers import CustomUserSerializer
+from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer
 
 User = get_user_model()
 
@@ -323,3 +325,21 @@ class UserPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView
         context = super().get_context_data(**kwargs)
         context['title'] = 'Установить новый пароль'
         return context
+
+
+class CreatePaymentAPIView(generics.CreateAPIView):
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+
+
+class DeletePaymentAPIView(generics.DestroyAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+
+
+class PaymentsListAPIView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ('course', 'lesson', 'cash', 'user', 'created_at')
+    ordering_fields = ['course', 'lesson', 'cash', 'user', 'created_at', 'user']

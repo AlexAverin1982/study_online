@@ -1,5 +1,5 @@
 from django.views import generic
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -48,7 +48,16 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
 
 
+class LessonPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixin):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+
+    # lookup_field = 'pk'
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+
 class LessonDestroyAPIView(generics.DestroyAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-
