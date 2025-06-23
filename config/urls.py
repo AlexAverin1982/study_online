@@ -8,6 +8,7 @@ urlpatterns = [
     path("admin/", admin.site.urls, name="adminka"),
     path("", include("materials.urls"), name='home_page'),
     path("auth/", include("users.urls")),
+    path("users/", include("users.urls", namespace='users')),
 ]
 
 if settings.DEBUG:

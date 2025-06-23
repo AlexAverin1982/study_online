@@ -1,5 +1,5 @@
 from rest_framework import serializers
-# from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from materials.models import Course, Lesson
 from .models import CustomUser, Payment
@@ -12,7 +12,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    payments = PaymentSerializer(source='Платежи', many=True)
+    payments = PaymentSerializer(source='Платежи', many=True, required=False)
 
     class Meta:
         model = CustomUser
@@ -28,8 +28,6 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     lesson = serializers.SlugRelatedField(queryset=Lesson.objects.all(), slug_field='id', allow_null=True,
                                           allow_empty=True)
 
-    # course = CourseSerializer(read_only=True, required=False)
-    # lesson = LessonSerializer(read_only=True, required=False)
 
     class Meta:
         model = Payment
@@ -56,3 +54,15 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Сумма платежа не указана или указана неверно.")
         print(f"sum---------------------------{sum}")
         return fields
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Добавление пользовательских полей в токен
+        token['username'] = user.username
+        token['email'] = user.email
+
+        return token

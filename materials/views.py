@@ -52,8 +52,6 @@ class LessonPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixi
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
-    # lookup_field = 'pk'
-
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
