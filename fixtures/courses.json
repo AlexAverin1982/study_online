@@ -1,0 +1,11 @@
+[
+{
+    "model": "materials.course",
+    "pk": 3,
+    "fields": {
+        "name": "Фронтенд-разработка на JavaScript",
+        "preview": "",
+        "description": "Создание полноценных интерфейсов для сайтов с помощью JavaScript"
+    }
+}
+]

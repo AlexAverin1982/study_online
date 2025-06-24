@@ -1,11 +1,8 @@
 from django.http import HttpResponseRedirect
-# from django.urls import reverse_lazy
 from django.urls import reverse
 from django.views.generic.edit import CreateView
 from django.views.generic import DeleteView, UpdateView, TemplateView, View
-# ListView
 from django.contrib.auth.views import LoginView
-# LogoutView
 from django.contrib.auth import login, authenticate
 from django.core.mail import send_mail
 from django.conf import settings
@@ -16,21 +13,19 @@ from django.utils.encoding import force_bytes
 from django.contrib.sites.models import Site
 from django.shortcuts import redirect, get_object_or_404, render
 from django.contrib.auth import get_user_model
+from django_filters.rest_framework import DjangoFilterBackend
 from typing_extensions import Any
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.urls import reverse_lazy
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserSetNewPasswordForm
-# UserForgotPasswordForm,
 from .forms import CustomUserCreationForm, CustomUserUpdateForm, UsersControlInitForm
-# LoginForm, UsersControlForm
 from .mixins import UserIsNotAuthenticated
-from .models import CustomUser, UsersControl
-# from django.views import generic
+from .models import CustomUser, UsersControl, Payment
 from rest_framework import generics
-
-from .serializers import CustomUserSerializer
+from rest_framework.filters import OrderingFilter
+from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer
 
 User = get_user_model()
 
@@ -52,51 +47,10 @@ class UserLoginView(LoginView):
         if user:
             if user.is_active:
                 login(request, user)
-                return redirect(reverse('home'))
+                return redirect(reverse('materials:home'))
         else:
             messages.error(request, 'Логин или пароль неправильные')
-            return redirect(reverse('home'))
-
-
-"""
-предыдущая версия, работающая без подтверждения по емайл
-class RegisterView(FormView):
-    template_name = 'register.html'
-    form_class = CustomUserCreationForm
-    success_url = reverse_lazy('home')
-    success_message = 'Вы успешно зарегистрировались. Можете войти на сайт!'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Регистрация на сайте'
-        return context
-
-    def form_valid(self, form):
-        user = form.save()
-        # user = form.save(commit=False)
-        # user.is_active = False
-        # user.save()
-        # # Функционал для отправки письма и генерации токена
-        # token = default_token_generator.make_token(user)
-        # uid = urlsafe_base64_encode(force_bytes(user.pk))
-        # activation_url = reverse_lazy('confirm_email', kwargs={'uidb64': uid, 'token': token})
-        # current_site = Site.objects.get_current().domain
-        # current_site = '127.0.0.1'
-        # send_mail(
-        #     'Подтвердите свой электронный адрес',
-        #     f'Пожалуйста, перейдите по следующей ссылке,
-        чтобы подтвердить свой адрес электронной почты: http://{current_site}{activation_url}',
-        #     'service.notehunter@gmail.com',
-        #     [user.email],
-        #     fail_silently=False,
-        # )
-        return redirect(reverse_lazy('user_profile', kwargs={'pk': user.id}))
-
-    def send_welcome_email(self, user_email):
-        subject = 'Добро пожаловать в наш сервис'
-        message = 'Спасибо, что зарегистрировались в нашем сервисе!'
-        send_mail(subject, message, settings.EMAIL_HOST_USER, [user_email])
-"""
+            return redirect(reverse('materials:home'))
 
 
 class RegisterView(UserIsNotAuthenticated, CreateView):
@@ -132,14 +86,16 @@ class RegisterView(UserIsNotAuthenticated, CreateView):
         return redirect('email_confirmation_sent')
 
 
-#
-# class UserProfileView(DetailView):
-#     model = CustomUser
-#     template_name = "user_profile.html"
-#     context_object_name = 'user'
-#     success_url = reverse_lazy('home')
-#
-#
+class UserCreateAPIView(generics.CreateAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+
+    def perform_create(self, serializer):
+        user = serializer.save(is_active=True)
+        user.set_password(user.password)
+        user.save()
+
+
 class UserDeleteView(DeleteView):
     model = CustomUser
     success_url = reverse_lazy("home")
@@ -165,14 +121,13 @@ class UserUpdateView(UpdateView):
         'User_editing_mode': True,
     }
 
-    # def __init__(self):
-    #     super().__init__()
 
     def get_success_url(self):
         return reverse("user_profile", kwargs=self.kwargs)
 
 
 class UserConfirmEmailView(View):
+
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64)
@@ -235,13 +190,11 @@ class UsersControlView(UpdateView):
     def post(self, request, *args, **kwargs) -> Any:
         req_data = dict(request.POST.copy())
         data_in_form = UsersControlInitForm(request.POST)
-        # active_users = req_data['users']
         active_users = sorted([int(id) for id in req_data['users']])
         print(f"active_users: {active_users}")
 
         all_users = CustomUser.objects.all().values_list('id', flat=True)
         inactive_users = all_users.exclude(id__in=active_users)
-        # print(f"inactive_users: {inactive_users}")
 
         if data_in_form.is_valid():
             if inactive_users:
@@ -288,11 +241,6 @@ class InitUsersControlView(CreateView):
             data.save_m2m()
             return HttpResponseRedirect(reverse_lazy('home'))
         else:
-            # print(f"request.POST: {request.POST}")
-            # print(f"data: {data}")
-            # errors = self.get_form().errors
-            # print(f"errors: {errors}")
-            # kwargs['errors_data'] = self.get_form().errors
             return HttpResponseRedirect(reverse('errors'))
 
 
@@ -323,3 +271,21 @@ class UserPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView
         context = super().get_context_data(**kwargs)
         context['title'] = 'Установить новый пароль'
         return context
+
+
+class CreatePaymentAPIView(generics.CreateAPIView):
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+
+
+class DeletePaymentAPIView(generics.DestroyAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+
+
+class PaymentsListAPIView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ('course', 'lesson', 'cash', 'user', 'created_at')
+    ordering_fields = ['course', 'lesson', 'cash', 'user', 'created_at', 'user']

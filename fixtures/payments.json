@@ -1,0 +1,74 @@
+[
+{
+    "model": "users.payment",
+    "pk": 10,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-02T11:24:27.325Z",
+        "course": 3,
+        "lesson": 200,
+        "cash": false,
+        "sum": 6200.0
+    }
+},
+{
+    "model": "users.payment",
+    "pk": 11,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-03T11:24:27.325Z",
+        "course": 3,
+        "lesson": 201,
+        "cash": false,
+        "sum": 6200.0
+    }
+},
+{
+    "model": "users.payment",
+    "pk": 12,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-05T11:24:27.325Z",
+        "course": 3,
+        "lesson": 202,
+        "cash": false,
+        "sum": 6200.0
+    }
+},
+{
+    "model": "users.payment",
+    "pk": 13,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-10T11:24:27.325Z",
+        "course": 3,
+        "lesson": 203,
+        "cash": false,
+        "sum": 6200.0
+    }
+},
+{
+    "model": "users.payment",
+    "pk": 14,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-15T11:24:27.325Z",
+        "course": 3,
+        "lesson": 204,
+        "cash": true,
+        "sum": 6200.0
+    }
+},
+{
+    "model": "users.payment",
+    "pk": 15,
+    "fields": {
+        "user": 3,
+        "created_at": "2023-09-17T11:24:27.325Z",
+        "course": 3,
+        "lesson": 205,
+        "cash": true,
+        "sum": 6200.0
+    }
+}
+]
