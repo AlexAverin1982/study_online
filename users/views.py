@@ -1,31 +1,33 @@
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic.edit import CreateView
-from django.views.generic import DeleteView, UpdateView, TemplateView, View
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, authenticate
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.sites.models import Site
-from django.shortcuts import redirect, get_object_or_404, render
+from django.shortcuts import redirect, render
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from typing_extensions import Any
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.urls import reverse_lazy
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserSetNewPasswordForm
-from .forms import CustomUserCreationForm, CustomUserUpdateForm, UsersControlInitForm
+from .forms import CustomUserCreationForm, UsersControlInitForm
 from .mixins import UserIsNotAuthenticated
 from .models import CustomUser, UsersControl, Payment
-from rest_framework import generics
+from rest_framework import generics, mixins, status
 from rest_framework.filters import OrderingFilter
-from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer
+from rest_framework.response import Response
+from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer
 
 User = get_user_model()
 
@@ -33,7 +35,7 @@ User = get_user_model()
 class UserLoginView(LoginView):
     form_class = AuthenticationForm
     template_name = 'login.html'
-    next_page = 'home'
+    next_page = 'materials:home'
 
     def get(self, request, **kwargs):
         form = AuthenticationForm()
@@ -58,7 +60,7 @@ class RegisterView(UserIsNotAuthenticated, CreateView):
      Представление регистрации на сайте с формой регистрации
      """
     form_class = CustomUserCreationForm
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('materials:home')
     template_name = 'registration/user_register.html'
 
     def get_context_data(self, **kwargs):
@@ -96,120 +98,31 @@ class UserCreateAPIView(generics.CreateAPIView):
         user.save()
 
 
-class UserDeleteView(DeleteView):
-    model = CustomUser
-    success_url = reverse_lazy("home")
-    template_name = 'delete_user.html'
+class UserDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class UserListAPIView(ListAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = [IsAuthenticated]
 
 
 class CustomUserRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
+    permission_classes = [IsAuthenticated]
 
 
-class CustomUserUpdateAPIView(generics.UpdateAPIView):
-    serializer_class = CustomUserSerializer
+class CustomUserPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixin):
     queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [IsAuthenticated]
 
-
-class UserUpdateView(UpdateView):
-    model = CustomUser
-    form_class = CustomUserUpdateForm
-    template_name = 'register.html'
-
-    extra_context = {
-        'User_editing_mode': True,
-    }
-
-
-    def get_success_url(self):
-        return reverse("user_profile", kwargs=self.kwargs)
-
-
-class UserConfirmEmailView(View):
-
-    def get(self, request, uidb64, token):
-        try:
-            uid = urlsafe_base64_decode(uidb64)
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
-
-        if user is not None and default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
-            login(request, user)
-            return redirect('email_confirmed')
-        else:
-            return redirect('email_confirmation_failed')
-
-
-class EmailConfirmationSentView(TemplateView):
-    template_name = 'email_confirmation_sent.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Письмо активации отправлено'
-        return context
-
-
-class EmailConfirmedView(TemplateView):
-    template_name = 'email_confirmed.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Ваш электронный адрес активирован'
-        return context
-
-
-class EmailConfirmationFailedView(TemplateView):
-    template_name = 'email_confirmation_failed.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Ваш электронный адрес не активирован'
-        return context
-
-
-class UsersControlView(UpdateView):
-    model = UsersControl
-    form_class = UsersControlInitForm
-    template_name = "init_users_control.html"
-    context_object_name = 'control'
-    success_url = reverse_lazy('home')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context.update({
-            'users': CustomUser.objects.all(),
-        })
-
-        return context
-
-    def post(self, request, *args, **kwargs) -> Any:
-        req_data = dict(request.POST.copy())
-        data_in_form = UsersControlInitForm(request.POST)
-        active_users = sorted([int(id) for id in req_data['users']])
-        print(f"active_users: {active_users}")
-
-        all_users = CustomUser.objects.all().values_list('id', flat=True)
-        inactive_users = all_users.exclude(id__in=active_users)
-
-        if data_in_form.is_valid():
-            if inactive_users:
-                for id in inactive_users:
-                    user = get_object_or_404(CustomUser, pk=id)
-                    user.is_active = False
-                    user.save()
-            else:
-                inactive_users = CustomUser.objects.filter(is_active=False)
-                inactive_users.update(is_active=True)
-                for user in inactive_users:
-                    user.save()
-            return HttpResponseRedirect(reverse_lazy('home'))
-        else:
-            return HttpResponseRedirect(reverse('errors'))
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
 
 class InitUsersControlView(CreateView):
@@ -217,7 +130,7 @@ class InitUsersControlView(CreateView):
     form_class = UsersControlInitForm
     template_name = 'init_users_control.html'
     context_object_name = 'control'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('materials:home')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -239,7 +152,7 @@ class InitUsersControlView(CreateView):
             update.owner = request.user
             update.save()
             data.save_m2m()
-            return HttpResponseRedirect(reverse_lazy('home'))
+            return HttpResponseRedirect(reverse_lazy('materials:home'))
         else:
             return HttpResponseRedirect(reverse('errors'))
 
@@ -273,19 +186,63 @@ class UserPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView
         return context
 
 
+class ChangePasswordView(generics.UpdateAPIView):
+    """
+    An endpoint for changing password.
+    """
+    serializer_class = ChangePasswordSerializer
+    model = CustomUser
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, queryset=None):
+        obj = self.request.user
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        print(f"kwargs: {kwargs}")
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            # Check old password
+            # if not self.object.check_password(serializer.data.get("old_password")):
+            #     return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            # set_password also hashes the password that the user will get
+            password = serializer.data.get("new_password")
+            user = CustomUser.objects.get(pk=kwargs['pk'])
+            user.set_password(password)
+            user.save()
+            # self.object.set_password(password)
+            # self.object.save()
+            response = {
+                'status': 'success',
+                'code': status.HTTP_200_OK,
+                'message': 'Password updated successfully',
+                'data': []
+            }
+
+            return Response(response)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+#############################################################################################################
 class CreatePaymentAPIView(generics.CreateAPIView):
     queryset = Payment.objects.all
     serializer_class = PaymentCreateSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class DeletePaymentAPIView(generics.DestroyAPIView):
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
 
 
 class PaymentsListAPIView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ('course', 'lesson', 'cash', 'user', 'created_at')
     ordering_fields = ['course', 'lesson', 'cash', 'user', 'created_at', 'user']

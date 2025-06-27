@@ -27,6 +27,9 @@ AUTH_PASSWORD_VALIDATORS = [
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CACHE_ENABLED = False
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -68,6 +71,7 @@ EMAIL_HOST_PASSWORD = os.getenv('SERVER_MAIL_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 ADMIN_MAIL = os.getenv('ADMIN_MAIL')
+ADMIN_DEFAULT_PASSWORD = os.getenv('ADMIN_DEFAULT_PASSWORD')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -96,7 +100,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",       # commented to make user deleteion work without csrf protection
+                                                        # all other workarounds for rest api have failed so far...
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

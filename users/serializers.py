@@ -66,3 +66,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
 
         return token
+
+class ChangePasswordSerializer(serializers.Serializer):
+    model = CustomUser
+
+    """
+    Serializer for password change endpoint.
+    """
+    # old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

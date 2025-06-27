@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from materials.models import Course, Lesson
+import materials
 
 
 class CustomUser(AbstractUser):
@@ -38,11 +38,10 @@ class Payment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, related_name='Платежи',
                              verbose_name='Платеж', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата платежа")
-
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, related_name='Платежи',
+    course = models.ForeignKey('materials.Course', on_delete=models.SET_NULL, related_name='Платежи',
                                verbose_name='Оплаченный курс', blank=True, null=True)
 
-    lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, related_name='Платежи',
+    lesson = models.ForeignKey('materials.Lesson', on_delete=models.SET_NULL, related_name='Платежи',
                                verbose_name='Оплаченный урок', blank=True, null=True)
 
     cash = models.BooleanField(default=False, verbose_name='Оплачено наличными')
@@ -53,7 +52,7 @@ class Payment(models.Model):
         from django.core.exceptions import ValidationError
         if self.lesson:
             if self.course:
-                lesson_obj = Lesson.objects.get(id=self.lesson)
+                lesson_obj = mm.Lesson.objects.get(id=self.lesson)
                 if lesson_obj.course != self.course:
                     raise ValidationError('Курс оплаченного урока указан неверно')
             else:
