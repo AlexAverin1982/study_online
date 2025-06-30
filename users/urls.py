@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshSlidingView
-from .views import (RegisterView, CustomUserRetrieveAPIView, CreatePaymentAPIView,
+from .views import (CustomUserRetrieveAPIView, CreatePaymentAPIView,
                     DeletePaymentAPIView, PaymentsListAPIView, UserCreateAPIView, UserListAPIView, UserDeleteAPIView,
                     CustomUserPartialUpdateAPIView, ChangePasswordView)
 
@@ -21,8 +21,6 @@ urlpatterns = [
     path('payments/', PaymentsListAPIView.as_view(), name='payments'),
     path('add_payment/', CreatePaymentAPIView.as_view(), name='add_payment'),
     path('delete_payment/<int:pk>/', DeletePaymentAPIView.as_view(), name='delete_payment'),
-    path('greetings/<int:pk>', RegisterView.as_view(), name='greetings'),
     path("profile/<int:pk>/", CustomUserRetrieveAPIView.as_view(), name="user_profile"),
-
     path('token_refresh/', TokenRefreshSlidingView.as_view(), name='token_refresh'),
 ]

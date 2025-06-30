@@ -9,14 +9,6 @@ from materials.serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator, IsOwner
 
 
-class HomeView(generic.TemplateView):
-    template_name = "home.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
-
-
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
@@ -34,9 +26,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             self.permission_classes = (~IsModerator,)
         elif self.action in ['retrieve', 'update']:
-            self.permission_classes = (IsModerator | IsOwner, )
+            self.permission_classes = (IsModerator | IsOwner,)
         elif self.action in ['destroy']:
-            self.permission_classes = (~IsModerator | IsOwner, )
+            self.permission_classes = (~IsModerator | IsOwner,)
 
         return super().get_permissions()
 
@@ -48,7 +40,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
-    permission_classes = [IsModerator]
+    permission_classes = [IsAuthenticated, ~IsModerator]
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -57,26 +49,25 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-    permission_classes = [IsAuthenticated, IsModerator, IsOwner]
+    permission_classes = [IsAuthenticated]
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-    permission_classes = [IsModerator]
-    # permission_classes = [IsAuthenticated, IsModerator, IsOwner]
+    permission_classes = [~IsOwner]
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner | IsModerator]
 
 
 class LessonPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixin):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner | IsModerator]
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
