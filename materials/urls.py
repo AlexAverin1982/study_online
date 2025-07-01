@@ -17,6 +17,8 @@ urlpatterns = ([
                    path("lessons/<int:pk>/", views.LessonRetrieveAPIView.as_view(), name="lesson"),
                    path("update_lesson/<int:pk>/", views.LessonPartialUpdateAPIView.as_view(), name="update_lesson"),
                    path("delete_lesson/<int:pk>/", views.LessonDestroyAPIView.as_view(), name="delete_lesson"),
+                   path("add_sub/", views.SubscriptionCreateAPIView.as_view(), name="add_sub"),
                ] + router.urls)
 
-print(router.urls)
+# for url in router.urls:
+#     print(url)
