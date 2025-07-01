@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.views import generic
 from rest_framework import viewsets, generics, mixins
 from rest_framework.permissions import IsAuthenticated
@@ -56,6 +57,11 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [~IsOwner]
+
+    def get_object(self):
+        obj = get_object_or_404(self.get_queryset(), pk=self.kwargs['pk'])
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
