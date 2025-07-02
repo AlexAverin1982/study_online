@@ -19,4 +19,4 @@ urlpatterns = ([
                    path("delete_lesson/<int:pk>/", views.LessonDestroyAPIView.as_view(), name="delete_lesson"),
                ] + router.urls)
 
-print(router.urls)
+# print(router.urls)

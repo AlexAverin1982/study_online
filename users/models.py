@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db import models
 
-import materials
-
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -52,7 +50,8 @@ class Payment(models.Model):
         from django.core.exceptions import ValidationError
         if self.lesson:
             if self.course:
-                lesson_obj = mm.Lesson.objects.get(id=self.lesson)
+                from materials.models import Lesson
+                lesson_obj = Lesson.objects.get(id=self.lesson)
                 if lesson_obj.course != self.course:
                     raise ValidationError('Курс оплаченного урока указан неверно')
             else:

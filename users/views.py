@@ -7,8 +7,9 @@ from rest_framework import generics, mixins, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from .permissions import IsSuperUser
-from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer
+from .permissions import IsSuperUser, IsOwnProfile
+from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer, \
+    CustomUserRestrictedSerializer
 
 User = get_user_model()
 
@@ -26,7 +27,7 @@ class UserCreateAPIView(generics.CreateAPIView):
 class UserDeleteAPIView(generics.DestroyAPIView):
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
-    permission_classes = [IsAuthenticated, IsSuperUser]
+    permission_classes = [IsAuthenticated, IsSuperUser | IsOwnProfile]
 
 
 class UserListAPIView(ListAPIView):
@@ -38,13 +39,21 @@ class UserListAPIView(ListAPIView):
 class CustomUserRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated ] #, IsOwnProfile]
+
+    def get_serializer_class(self):
+        profile_id = self.kwargs.get('pk')
+        if profile_id:
+            if profile_id == self.request.user.id:
+                return CustomUserSerializer
+            else:
+                return CustomUserRestrictedSerializer
 
 
 class CustomUserPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixin):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnProfile]
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
@@ -56,7 +65,7 @@ class ChangePasswordView(generics.UpdateAPIView):
     """
     serializer_class = ChangePasswordSerializer
     model = CustomUser
-    permission_classes = (IsAuthenticated, IsSuperUser)
+    permission_classes = [IsAuthenticated, IsSuperUser | IsOwnProfile]
 
     def get_object(self, queryset=None):
         obj = self.request.user
