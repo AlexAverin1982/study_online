@@ -56,12 +56,8 @@ class LessonListAPIView(generics.ListAPIView):
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-    permission_classes = (IsModerator, )
+    permission_classes = [IsAuthenticated, IsOwner | IsModerator]
 
-    def get_object(self):
-        obj = get_object_or_404(self.get_queryset(), pk=self.kwargs['pk'])
-        self.check_object_permissions(self.request, obj)
-        return obj
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
