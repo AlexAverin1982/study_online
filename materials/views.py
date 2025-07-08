@@ -24,13 +24,15 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def get_permissions(self):
-        if self.action in ['create', 'list']:
-            self.permission_classes = [IsAuthenticated]
+        if self.action in ['create']:
+            self.permission_classes = [IsAuthenticated, ~IsModerator,]
         elif self.action in ['retrieve', 'update']:
             self.permission_classes = (IsAuthenticated, IsModerator,)
             # self.permission_classes = (IsAuthenticated, IsModerator | IsOwner,)
         elif self.action in ['destroy']:
             self.permission_classes = (~IsModerator | IsOwner,)
+        else:
+            self.permission_classes = [IsAuthenticated]
 
         return super().get_permissions()
 
