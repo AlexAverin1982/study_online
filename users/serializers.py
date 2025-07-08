@@ -21,6 +21,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
     def get_payments(self, obj):
         return obj.Платежи.order_by('-created_at')
 
+class CustomUserRestrictedSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'avatar', 'city']
+
+
 
 class PaymentCreateSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='id')
@@ -52,7 +59,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
                     "Необходимо указать либо оплачиваемый курс, либо курс и входящий в него урок.")
         if sum <= 0:
             raise serializers.ValidationError("Сумма платежа не указана или указана неверно.")
-        print(f"sum---------------------------{sum}")
+        # print(f"sum---------------------------{sum}")
         return fields
 
 
@@ -66,3 +73,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
 
         return token
+
+class ChangePasswordSerializer(serializers.Serializer):
+    model = CustomUser
+
+    """
+    Serializer for password change endpoint.
+    """
+    # old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
