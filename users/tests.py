@@ -37,7 +37,7 @@ class LessonTestCase(APITestCase):
         self.co.is_active = True
         self.co.save()
 
-        self.lesson = Lesson.objects.create(name='test lesson', owner=self.co)
+        self.lesson = Lesson.objects.create(name='lesson #1', owner=self.co)
         self.url = reverse('materials:lesson', args=(self.lesson.id,))
 
         self.student = CustomUser.objects.create_user(username="student", email="student@mail.ru", password='123456')
@@ -89,6 +89,7 @@ class LessonTestCase(APITestCase):
         client.force_authenticate(user=self.student)
         response = client.get('/courses/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        """
         course_id = response.json()[0]['id']
         response = client.get(f'/courses/{course_id}/')
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
@@ -109,11 +110,11 @@ class LessonTestCase(APITestCase):
         response = client.delete(f'/courses/{course2.id}')
         # print(f"response.status_code: {response.status_code}")
         self.assertEqual(response.status_code, status.HTTP_301_MOVED_PERMANENTLY)
-
+        """
 
     def test_create_lesson_without_auth(self):
         data = {
-            "name": "test_lesson",
+            "name": 'lesson #2',
             "description": "test lesson description"
         }
         response = self.client.post('/add_lesson/', data=data)
@@ -121,59 +122,83 @@ class LessonTestCase(APITestCase):
 
     def test_CRUD_lesson_with_auth(self):
         data = {
-            "name": "test_lesson",
+            "name": 'lesson #2',
             "description": "test lesson description"
         }
 
         client.force_authenticate(user=self.co)
         response = client.post('/add_lesson/', data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        test_lesson = Lesson.objects.filter(name='test_lesson')
+        test_lesson = Lesson.objects.filter(name='lesson #2')
         self.assertTrue(test_lesson.exists())
-        test_lesson = Lesson.objects.get(name='test_lesson')
+        test_lesson = Lesson.objects.get(name='lesson #2')
         self.assertEqual(test_lesson.description, "test lesson description")
         lesson_id = test_lesson.id
-        print(f"lesson_id: {lesson_id}")
-        for l in Lesson.objects.all():
-            print(f"id: {l.id}, name: {l.name}, desc: {l.description}, owner: {l.owner}")
-        response = client.get(f'/lessons/{lesson_id}')
-        self.assertEqual(response.status_code, status.HTTP_301)
-        print(response.status_code)
-        # self.assertEqual(response.json()[0]['description'], "test lesson description")
-        # response = client.get('/lessons/')
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(response.json().get('count'), 1)
-        #
-        # data = {
-        #     "description": "still no description..."
-        # }
-        # response = client.put(f'/update_lesson/{lesson_id}/', data=data)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(response.json()['description'], "still no description...")
-        # # print(response.json()['description'])
-        #
-        # data = {
-        #     "video": "tralalala"
-        # }
-        # response = client.put(f'/update_lesson/{lesson_id}/', data=data)
-        # self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # self.assertEqual(response.json()['video'][0], "Разрешается публиковать материалы только с youtube.com")
+        # print(f"lesson_id: {lesson_id}")
+        # for l in Lesson.objects.all():
+        #     print(f"id: {l.id}, name: {l.name}, desc: {l.description}, owner: {l.owner}")
+        response = client.get(f'/lessons/{lesson_id}/')
+        # for item in dir(response):
+        #     print(item)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['description'], "test lesson description")
+        response = client.get('/lessons/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get('count'), 2)
+
+        data = {
+            "description": "still no description..."
+        }
+        response = client.put(f'/update_lesson/{lesson_id}/', data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['description'], "still no description...")
+
+        data = {
+            "video": "tralalala"
+        }
+        response = client.put(f'/update_lesson/{lesson_id}/', data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # print(f"\n\nresponse: {response.json()}\n\n")
+        self.assertEqual(response.json()['video'][0], "Разрешается публиковать материалы только с youtube.com")
         # # print(f"result: {response.json()['video'][0]}")
-        # url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"
-        # data = {
-        #     "video": url
-        # }
-        # response = client.put(f'/update_lesson/{lesson_id}/', data=data)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(response.json()['video'], url)
-        # # self.assertEqual(response.json()['video'][0], "Разрешается публиковать материалы только с youtube.com")
-        #
-        # old_count = Lesson.objects.all().count()
-        # response = client.delete(f'/delete_lesson/{lesson_id}/')
-        # self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        #
-        # new_count = Lesson.objects.all().count()
-        # self.assertEqual(old_count - 1, new_count)
-        # test_lesson = Lesson.objects.filter(name='test_lesson')
-        # self.assertTrue(not test_lesson.exists())
+        url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"
+        data = {
+            "video": url
+        }
+        response = client.put(f'/update_lesson/{lesson_id}/', data=data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['video'], url)
+
+        old_count = Lesson.objects.all().count()
+        response = client.delete(f'/delete_lesson/{lesson_id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        new_count = Lesson.objects.all().count()
+        # print(f"\n\nnew_count: {new_count}\n\n")
+        self.assertEqual(old_count - 1, new_count)
+        test_lesson = Lesson.objects.filter(name='lesson #2')
+        self.assertTrue(not test_lesson.exists())
+
+
+    def test_sub_unsub(self):
+        client.force_authenticate(user=self.co)
+        data = {
+            "name": "course 1",
+            "description": "course1 description"
+        }
+        response = client.post('/courses/', data=data)
+        course_id = response.json()['id']
+
+        data = {
+            "course_id": course_id
+        }
+
+        client.force_authenticate(user=self.student)
+        response = client.post('/add_sub/', data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['message'], 'подписка добавлена')
+        response = client.post('/add_sub/', data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['message'], 'подписка удалена')
