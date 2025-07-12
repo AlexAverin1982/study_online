@@ -1,3 +1,5 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views import generic
 from drf_yasg.utils import swagger_auto_schema
@@ -9,6 +11,7 @@ from rest_framework.response import Response
 from materials.models import Course, Lesson, Subscription
 from materials.paginators import CoursePaginator, LessonsPaginator
 from materials.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
+from materials.stripe_api import StripeAPI
 from users.permissions import IsModerator, IsOwner
 
 
@@ -63,6 +66,76 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+
+class CreateCourseProduct(generics.CreateAPIView):
+    """
+    формирование цены на покупку курса и механизма покупки
+    """
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = Course.objects.all()
+    """
+    владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
+
+    нужно наименование курса и его описание
+    """
+
+    def post(self, *args, **kwargs):
+        user = self.request.user
+        # print(f"user: {user}")
+        course_id = self.request.data.get("course_id")
+        """
+        проверяем, существует ли указанный курс
+        """
+        course = get_object_or_404(Course, id=course_id)
+        """
+        проверяем, является ли пользователь владельцем указанного курса
+        """
+        # print(f"\n\ncourse.owner: {course.owner}, type: {type(course.owner)}")
+        if not course.owner or course.owner != self.request.user:
+            return Response({"status": 400, "message": "Вы не являетесь владельцем указанного курса"})
+
+        # print(f"course: {course_id}")
+
+        # print(f"\n\nself.request.data: {self.request.data}\n\n")
+
+        # if course.product:
+        #     return Response({"message": "Такой продукт уже создан"})
+
+        price = self.request.data.get("price")
+        obj_price = course.price
+        if obj_price:
+            if price:  # the price specified in request is considered to be more actual than the one in object's field
+                course.price = price
+            else:
+                price = course.price
+        elif price:
+            course.price = price
+
+        # print(f"course: {course.name}")
+        # print(f"desc: {course.description}")
+        # print(f"product: {course.product}")
+
+        api = StripeAPI()
+        product = api.create_product(course.name, course.description)
+        # product = stripe.Product.create(name=course_item.name)
+        # if product:
+        #     course.product = product['id']
+
+        if price:
+            stripe_price = api.create_price(product['id'], price)
+            # print(f"stripe price: {stripe_price}")
+
+            """
+            теперь создаем ссылку на форму покупки курса
+            """
+        course.save()
+
+        return Response({"status": 200, "message": "продукт курса создан"})
+
+
+
 
 
 ##################################################################################################################

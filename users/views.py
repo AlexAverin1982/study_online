@@ -1,19 +1,22 @@
-import os
+# import os
 
 from django.contrib.auth import get_user_model
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from dotenv import load_dotenv
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.reverse import reverse
 
 from materials.models import Course
-from materials.serializers import CourseSerializer
-from .models import CustomUser, UsersControl, Payment
+from materials.stripe_api import StripeAPI
+# from materials.models import Course
+# from materials.serializers import CourseSerializer
+from .models import CustomUser, Payment
 from rest_framework import generics, mixins, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
-from django.core.exceptions import ObjectDoesNotExist
+# from django.core.exceptions import ObjectDoesNotExist
 
 from .permissions import IsSuperUser, IsOwnProfile, IsOwner
 from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer, \
@@ -22,6 +25,7 @@ import stripe
 
 User = get_user_model()
 load_dotenv()
+
 
 class UserCreateAPIView(generics.CreateAPIView):
     """
@@ -133,6 +137,85 @@ class CreatePaymentAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class BuyCourse(generics.CreateAPIView):
+    """
+    формирование ссылки на сеанс покупки курса с автоматически формируемой формой покупки картой на сайте stripe
+    """
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+    permission_classes = [IsAuthenticated]
+    """
+    пользователь получает ссылку, переходит по ней, видит цену на курс, вводит в форму данные карты, покупает
+
+    статус сеанса должен поменяться - тогда список купленных курсов у пользователя обновляется 
+    """
+
+    def post(self, *args, **kwargs):
+        user = self.request.user
+        course_id = self.request.data.get('course_id', 0)
+        if not course_id:
+            return Response({"status": 400, "message": "не указан идентификатор покупаемого курса"})
+
+        course = Course.objects.get(id=course_id)
+        if course.stripe_price:
+            api = StripeAPI()
+            payment = Payment.objects.create(user=user, course=course, sum=1000)
+            payment.save()
+            url = 'http://127.0.0.1:8000' + reverse('users:check_course_bought_ok',
+                                                    kwargs={'course': payment.pk, "user": user.id})
+            # url = reverse('users:check_course_bought_ok', kwargs={'pk': payment.pk})
+            session = api.create_checkout_session(course.stripe_price, success_url=url)
+
+            payment.sum = session.amount_total
+            payment.session = session.id
+            payment.save()
+            """
+            для сессии нужно сформировать ссылку, куда пользователь автоматически
+            перенаправится для проверки, произошла ли покупка
+            в ссылке нужно указать идентификатор оплаты
+            """
+
+
+        else:
+            return Response({"status": 400, "message": "у курса не указана стоимость"})
+
+        return Response({"status": 200, "url": session.url})
+
+
+class CheckCourseBought(generics.RetrieveAPIView):
+    """
+    После удачной покупки курса пользователь автоматически переходит на этот вид,
+    где мы получаем объект оплаты, объект сессии покупки, проверяем ее статус, и если все хорошо -
+    обновляем у пользователя список купленных курсов
+    """
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+
+    # permission_classes = [IsAuthenticated, IsOwner]
+
+    def get(self, request, *args, **kwargs):
+        # из ссылки нужно выковырять идентификатор оплаты
+        print(f"kwargs: {kwargs}")
+        payment_id = kwargs.get('course')
+        payment = get_object_or_404(Payment, id=payment_id)
+        api = StripeAPI()
+        # print(f"session id: {payment.session}")
+        message = "вроде бы ок"
+
+        if payment.session:
+            session = api.checkout_session(payment.session)
+            message = f"session status: {session.status}; payment status: {session.payment_status}"
+
+            if (session.status == 'complete') and (session.payment_status == 'paid'):
+                user_id = kwargs.get('user')
+                user = get_object_or_404(CustomUser, id=user_id)
+                print(f"kwargs user: {user}")
+                user.courses_bought.add(payment.course)
+
+        return Response({"status": 200, "message": message})
+        # super(CheckCourseBought, self).get(request, *args, **kwargs)
+
+
 class DeletePaymentAPIView(generics.DestroyAPIView):
     """
     Удаление оплаты
@@ -152,88 +235,3 @@ class PaymentsListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ('course', 'lesson', 'cash', 'user', 'created_at')
     ordering_fields = ['course', 'lesson', 'cash', 'user', 'created_at', 'user']
-
-
-class CreateCourseProduct(generics.CreateAPIView):
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
-    queryset = Course.objects.all()
-    """
-    владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
-    
-    нужно наименование курса и его
-    """
-
-    def post(self, *args, **kwargs):
-        user = self.request.user
-        print(f"user: {user}")
-        course_id = self.request.data.get("course_id")
-        """
-        проверяем, существует ли указанный курс
-        """
-        try:
-            course = Course.objects.get(id=course_id)
-        except ObjectDoesNotExist:
-            raise Http404
-        """
-        проверяем, является ли пользователь владельцем указанного курса
-        """
-        print(f"\n\ncourse.owner: {course.owner}, type: {type(course.owner)}")
-        if not course.owner or course.owner != self.request.user:
-            return Response({"message": "Вы не являетесь владельцем указанного курса"})
-
-        print(f"course: {course_id}")
-        course_item = Course.objects.get(pk=course_id)
-
-        print(f"\n\nself.request.data: {self.request.data}\n\n")
-
-        # if course_item.product:
-        #     return Response({"message": "Такой продукт уже создан"})
-
-        price = self.request.data.get("price")
-        obj_price = course_item.price
-        if obj_price:
-            if price:  # the price specified in request is considered to be more actual than the one in course's field
-                course_item.price = price
-            else:
-                price = course_item.price
-        elif price:
-            course_item.price = price
-
-        print(f"course: {course_item.name}")
-        print(f"desc: {course_item.description}")
-        print(f"product: {course_item.product}")
-
-        stripe.api_key = os.getenv('STRIPE_API_KEY')
-        # product = stripe.Product.create(name=course_item.name)
-        # if product:
-        #     course_item.product = product.id
-
-        if price:
-            stripe_price = stripe.Price.create(unit_amount=price, currency='rub', product='prod_Sef1YkWqDO7U8n')
-            print(f"stripe price: {stripe_price}")
-            """
-$stripe->prices->create([
-  'unit_amount' => 1999,
-  'currency' => 'usd',
-  'recurring' => ['interval' => 'month'],
-  'product' => $product_id,
-  'lookup_key' => $your_custom_value
-]);                
-            """
-        course_item.save()
-
-        # print(f"\n\n product: {product}\n\n")
-
-        # if Subscription.objects.filter(user=user, course=course_item).exists():
-        #     Subscription.objects.filter(user=user, course=course_item).delete()
-        #     message = "подписка удалена"
-        # else:
-        #     sub = Subscription.objects.create(user=user, course=course_item)
-        #     sub.save()
-        #     message = "подписка добавлена"
-
-        return Response({"message": "продукт курса создан"})
-
-        # for item in self.request:
-        #     print(item)

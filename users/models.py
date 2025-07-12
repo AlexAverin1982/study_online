@@ -28,13 +28,6 @@ class CustomUser(AbstractUser):
         # permissions = [('can_block_user', 'Can block and unblock users'), ]
 
 
-class UsersControl(models.Model):
-    users = models.ManyToManyField(CustomUser, verbose_name="Пользователи, которым можно заходить в приложение")
-
-    class Meta:
-        verbose_name = "Управление пользователями"
-
-
 class Payment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, related_name='Платежи',
                              verbose_name='Платеж', blank=True, null=True)
@@ -48,6 +41,8 @@ class Payment(models.Model):
     cash = models.BooleanField(default=False, verbose_name='Оплачено наличными')
 
     sum = models.FloatField(blank=False, verbose_name='Сумма', validators=[MinValueValidator(100.0)])
+
+    session = models.CharField(verbose_name='Идентификатор сессии покупки', blank=True)
 
     def clean(self):
         from django.core.exceptions import ValidationError

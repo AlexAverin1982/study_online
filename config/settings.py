@@ -93,8 +93,9 @@ INSTALLED_APPS = [
     "django_filters",
     'rest_framework',
     "groupadmin_users",
-    "materials",
     "users",
+    "materials",
+
 ]
 
 LOGGING = {
