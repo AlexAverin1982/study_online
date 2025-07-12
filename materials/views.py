@@ -95,7 +95,8 @@ class SubscriptionCreateAPIView(generics.CreateAPIView):
         # print(f"user: {user}")
         course_id = self.request.data.get("course_id")
         # print(f"course: {course_id}")
-        course_item = Course.objects.get(pk=course_id)
+        course_item = get_object_or_404(Course, id=course_id)
+
         # print(f"course: {course_item}")
 
         if Subscription.objects.filter(user=user, course=course_item).exists():
