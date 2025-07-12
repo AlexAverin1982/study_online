@@ -1,6 +1,9 @@
+import os
+
 from django.contrib.auth import get_user_model
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
+from dotenv import load_dotenv
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
@@ -18,7 +21,7 @@ from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateS
 import stripe
 
 User = get_user_model()
-
+load_dotenv()
 
 class UserCreateAPIView(generics.CreateAPIView):
     """
@@ -201,7 +204,7 @@ class CreateCourseProduct(generics.CreateAPIView):
         print(f"desc: {course_item.description}")
         print(f"product: {course_item.product}")
 
-        stripe.api_key = "sk_test_51RjKhk04SatfhYz28u3eQ2qjpF0TFrfc6ePHTK9OzIc7avdYvFAPXqZPZgRWuGTwS4Al2Vwjy9O9Kbg6XkKY9uEP00XPONBjhw"
+        stripe.api_key = os.getenv('STRIPE_API_KEY')
         # product = stripe.Product.create(name=course_item.name)
         # if product:
         #     course_item.product = product.id
