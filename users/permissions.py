@@ -1,16 +1,7 @@
 from rest_framework import permissions
 
 
-# import logging
-
-
-# logging.basicConfig(level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
-# logger.debug("*"*100)
-
 class IsModerator(permissions.BasePermission):
-    def __init__(self):
-        super(IsModerator, self).__init__()
 
     def has_permission(self, request, view):
         # logger.debug("Checking permissions for user: %s", request.user)
