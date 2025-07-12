@@ -12,6 +12,9 @@ class CustomUser(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    courses_bought = models.ManyToManyField('materials.Course', verbose_name='Купленные курсы')
+    lessons_bought = models.ManyToManyField('materials.Lesson', verbose_name='Купленные уроки')
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
