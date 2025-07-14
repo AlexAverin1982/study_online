@@ -3,7 +3,7 @@ from . import views
 from materials.apps import MaterialsConfig
 from rest_framework.routers import DefaultRouter
 
-from .views import CourseViewSet, CreateCourseProduct
+from .views import CourseViewSet, CreateCourseProduct, CreateLessonProduct
 
 app_name = MaterialsConfig.name
 
@@ -19,6 +19,7 @@ urlpatterns = ([
                    path("delete_lesson/<int:pk>/", views.LessonDestroyAPIView.as_view(), name="delete_lesson"),
                    path("add_sub/", views.SubscriptionCreateAPIView.as_view(), name="add_sub"),
                    path('create_course_product/', CreateCourseProduct.as_view(), name='create_course_product'),
+                   path('create_lesson_product/', CreateLessonProduct.as_view(), name='create_lesson_product'),
                ] + router.urls)
 
 # print(router.urls)

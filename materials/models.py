@@ -41,6 +41,7 @@ class Lesson(models.Model):
     owner = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, related_name='lessons',
                               verbose_name='Владелец', blank=True, null=True)
 
+    product = models.CharField(max_length=100, verbose_name="Идентификатор stripe", blank=True)
     price = models.IntegerField(default=0, verbose_name='Цена урока в рублях')
     stripe_price = models.CharField(max_length=100, verbose_name="Идентификатор цены stripe", blank=True)
     # url_to_buy = models.URLField(verbose_name='Ссылка на покупку урока', blank=True)

@@ -1,17 +1,13 @@
-# import os
-
 from django.contrib.auth import get_user_model
-from django.http import Http404
+# from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from dotenv import load_dotenv
 from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.reverse import reverse
 
-from materials.models import Course
+from materials.models import Course, Lesson
 from materials.stripe_api import StripeAPI
-# from materials.models import Course
-# from materials.serializers import CourseSerializer
 from .models import CustomUser, Payment
 from rest_framework import generics, mixins, status
 from rest_framework.filters import OrderingFilter
@@ -21,7 +17,6 @@ from rest_framework.response import Response
 from .permissions import IsSuperUser, IsOwnProfile, IsOwner
 from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer, \
     CustomUserRestrictedSerializer
-import stripe
 
 User = get_user_model()
 load_dotenv()
@@ -139,7 +134,7 @@ class CreatePaymentAPIView(generics.CreateAPIView):
 
 class BuyCourse(generics.CreateAPIView):
     """
-    формирование ссылки на сеанс покупки курса с автоматически формируемой формой покупки картой на сайте stripe
+    формирование ссылки на сеанс покупки курса с автоматически создаваемой формой покупки картой на сайте stripe
     """
     queryset = Payment.objects.all
     serializer_class = PaymentCreateSerializer
@@ -175,7 +170,6 @@ class BuyCourse(generics.CreateAPIView):
             в ссылке нужно указать идентификатор оплаты
             """
 
-
         else:
             return Response({"status": 400, "message": "у курса не указана стоимость"})
 
@@ -195,7 +189,7 @@ class CheckCourseBought(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         # из ссылки нужно выковырять идентификатор оплаты
-        print(f"kwargs: {kwargs}")
+        # print(f"kwargs: {kwargs}")
         payment_id = kwargs.get('course')
         payment = get_object_or_404(Payment, id=payment_id)
         api = StripeAPI()
@@ -209,8 +203,90 @@ class CheckCourseBought(generics.RetrieveAPIView):
             if (session.status == 'complete') and (session.payment_status == 'paid'):
                 user_id = kwargs.get('user')
                 user = get_object_or_404(CustomUser, id=user_id)
-                print(f"kwargs user: {user}")
                 user.courses_bought.add(payment.course)
+
+        return Response({"status": 200, "message": message})
+        # super(CheckCourseBought, self).get(request, *args, **kwargs)
+
+
+class BuyLesson(generics.CreateAPIView):
+    """
+    формирование ссылки на сеанс покупки отдельного урока
+    с автоматически создаваемой формой покупки картой на сайте stripe
+    """
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+    permission_classes = [IsAuthenticated]
+    """
+    пользователь получает ссылку, переходит по ней, видит цену за урок, вводит в форму данные карты, покупает.
+    статус сеанса должен поменяться - тогда список купленных уроков у пользователя обновляется 
+    """
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        # print(f"\n\n\nrequest.get_host(): {request.get_host()}\n")
+        # for item in sorted(dir(request)):
+        #     print(item)
+
+        lesson_id = self.request.data.get('lesson_id', 0)
+        if not lesson_id:
+            return Response({"status": 400, "message": "не указан идентификатор покупаемого урока"})
+
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        if lesson.stripe_price:
+            api = StripeAPI()
+            payment = Payment.objects.create(user=user, lesson=lesson, sum=1000)
+            payment.save()
+
+            # TODO: detect protocol
+            url = 'http://' + request.get_host() + reverse('users:check_lesson_bought_ok',
+                                                           kwargs={'payment': payment.pk, "user": user.id})
+
+            session = api.create_checkout_session(lesson.stripe_price, success_url=url)
+
+            payment.sum = session.amount_total
+            payment.session = session.id
+            payment.save()
+            """
+            для сессии нужно сформировать ссылку, куда пользователь автоматически
+            перенаправится для проверки, произошла ли покупка
+            в ссылке нужно указать идентификатор оплаты
+            """
+
+        else:
+            return Response({"status": 400, "message": "у урока не указана стоимость"})
+
+        return Response({"status": 200, "url": session.url})
+
+
+class CheckLessonBought(generics.RetrieveAPIView):
+    """
+    После удачной покупки курса пользователь автоматически переходит на этот вид,
+    где мы получаем объект оплаты, объект сессии покупки, проверяем ее статус, и если все хорошо -
+    обновляем у пользователя список купленных курсов
+    """
+    queryset = Payment.objects.all
+    serializer_class = PaymentCreateSerializer
+
+    # permission_classes = [IsAuthenticated, IsOwner]
+
+    def get(self, request, *args, **kwargs):
+        # из ссылки нужно выковырять идентификатор оплаты
+        # print(f"kwargs: {kwargs}")
+        payment_id = kwargs.get('payment')
+        payment = get_object_or_404(Payment, id=payment_id)
+        api = StripeAPI()
+        # print(f"session id: {payment.session}")
+        message = "вроде бы ок"
+
+        if payment.session:
+            session = api.checkout_session(payment.session)
+            message = f"session status: {session.status}; payment status: {session.payment_status}"
+
+            if (session.status == 'complete') and (session.payment_status == 'paid'):
+                user_id = kwargs.get('user')
+                user = get_object_or_404(CustomUser, id=user_id)
+                user.lessons_bought.add(payment.lesson)
 
         return Response({"status": 200, "message": message})
         # super(CheckCourseBought, self).get(request, *args, **kwargs)

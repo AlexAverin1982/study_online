@@ -3,7 +3,8 @@ from django.contrib.auth.views import LogoutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshSlidingView
 from .views import (CustomUserRetrieveAPIView, CreatePaymentAPIView,
                     DeletePaymentAPIView, PaymentsListAPIView, UserCreateAPIView, UserListAPIView, UserDeleteAPIView,
-                    CustomUserPartialUpdateAPIView, ChangePasswordView, BuyCourse, CheckCourseBought)
+                    CustomUserPartialUpdateAPIView, ChangePasswordView, BuyCourse, CheckCourseBought, BuyLesson,
+                    CheckLessonBought)
 
 from users.apps import UsersConfig
 
@@ -24,5 +25,8 @@ urlpatterns = [
     path("profile/<int:pk>/", CustomUserRetrieveAPIView.as_view(), name="user_profile"),
     path('token_refresh/', TokenRefreshSlidingView.as_view(), name='token_refresh'),
     path('buy_course/', BuyCourse.as_view(), name='buy_course'),
+    path('buy_lesson/', BuyLesson.as_view(), name='buy_lesson'),
     path('check_course_bought_ok/<int:user>/<int:course>/', CheckCourseBought.as_view(), name='check_course_bought_ok'),
+    path('check_lesson_bought_ok/<int:user>/<int:payment>/',
+         CheckLessonBought.as_view(), name='check_lesson_bought_ok'),
 ]

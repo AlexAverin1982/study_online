@@ -78,12 +78,10 @@ class CreateCourseProduct(generics.CreateAPIView):
     """
     владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
 
-    нужно наименование курса и его описание
+    нужно наименование курса, его описание и цена
     """
 
     def post(self, *args, **kwargs):
-        user = self.request.user
-        # print(f"user: {user}")
         course_id = self.request.data.get("course_id")
         """
         проверяем, существует ли указанный курс
@@ -96,12 +94,8 @@ class CreateCourseProduct(generics.CreateAPIView):
         if not course.owner or course.owner != self.request.user:
             return Response({"status": 400, "message": "Вы не являетесь владельцем указанного курса"})
 
-        # print(f"course: {course_id}")
-
-        # print(f"\n\nself.request.data: {self.request.data}\n\n")
-
-        # if course.product:
-        #     return Response({"message": "Такой продукт уже создан"})
+        if course.product:
+            return Response({"status": 400, "message": "Такой продукт уже создан"})
 
         price = self.request.data.get("price")
         obj_price = course.price
@@ -113,29 +107,16 @@ class CreateCourseProduct(generics.CreateAPIView):
         elif price:
             course.price = price
 
-        # print(f"course: {course.name}")
-        # print(f"desc: {course.description}")
-        # print(f"product: {course.product}")
-
         api = StripeAPI()
         product = api.create_product(course.name, course.description)
-        # product = stripe.Product.create(name=course_item.name)
-        # if product:
-        #     course.product = product['id']
+        course.product = product['id']
 
         if price:
             stripe_price = api.create_price(product['id'], price)
-            # print(f"stripe price: {stripe_price}")
-
-            """
-            теперь создаем ссылку на форму покупки курса
-            """
+            course.stripe_price = stripe_price['id']
         course.save()
 
         return Response({"status": 200, "message": "продукт курса создан"})
-
-
-
 
 
 ##################################################################################################################
@@ -199,6 +180,55 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
 
+
+class CreateLessonProduct(generics.CreateAPIView):
+    """
+    формирование цены на покупку курса и механизма покупки
+    """
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = Course.objects.all()
+    """
+    владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
+
+    нужно наименование курса, его описание и цена
+    """
+
+    def post(self, *args, **kwargs):
+        lesson_id = self.request.data.get("lesson_id")
+        """
+        проверяем, существует ли указанный урок
+        """
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        """
+        проверяем, является ли пользователь владельцем указанного курса
+        """
+        if not lesson.owner or lesson.owner != self.request.user:
+            return Response({"status": 400, "message": "Вы не являетесь владельцем указанного урока"})
+
+        if lesson.product:
+            return Response({"status": 400, "message": "Такой продукт уже создан"})
+
+        price = self.request.data.get("price")
+        obj_price = lesson.price
+        if obj_price:
+            if price:  # the price specified in request is considered to be more actual than the one in object's field
+                lesson.price = price
+            else:
+                price = lesson.price
+        elif price:
+            lesson.price = price
+
+        api = StripeAPI()
+        product = api.create_product(lesson.name, lesson.description)
+        lesson.product = product['id']
+
+        if price:
+            stripe_price = api.create_price(product['id'], price)
+            lesson.stripe_price = stripe_price['id']
+        lesson.save()
+
+        return Response({"status": 200, "message": "продукт урока создан"})
 
 class SubscriptionCreateAPIView(generics.CreateAPIView):
     """

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
+from rest_framework.generics import get_object_or_404
 from django.db import models
 
 
@@ -46,14 +47,25 @@ class Payment(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+        from materials.models import Lesson
         if self.lesson:
+            print(f"self.lesson: {self.lesson.id}")
+            lesson_obj = Lesson.objects.get(id=self.lesson.id)
+            # lesson_obj = get_object_or_404(Lesson, id=self.lesson)
+            print("-" * 100)
+            print(f"lesson_obj.course: {lesson_obj.course}")
+
             if self.course:
-                from materials.models import Lesson
-                lesson_obj = Lesson.objects.get(id=self.lesson)
                 if lesson_obj.course != self.course:
                     raise ValidationError('Курс оплаченного урока указан неверно')
             else:
-                raise ValidationError('Курс оплаченного урока не указан')
+
+                if lesson_obj.course:
+
+
+                    self.course = lesson_obj.course
+                else:
+                    raise ValidationError('Курс оплаченного урока не указан')
         else:
             if not self.course:
                 raise ValidationError("Необходимо указать либо оплачиваемый курс, либо курс и входящий в него урок.")
@@ -63,5 +75,6 @@ class Payment(models.Model):
 
     # overriden to make sure the clean() method is called whenever object is to be created
     def save(self, *args, **kwargs):
+        self.clean()
         self.full_clean()  # here, complete validation is performed
         super().save(*args, **kwargs)  # then model does the rest
