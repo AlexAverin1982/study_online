@@ -14,7 +14,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 # from django.core.exceptions import ObjectDoesNotExist
 
-from .permissions import IsSuperUser, IsOwnProfile, IsOwner
+from .permissions import IsSuperUser, IsOwnProfile, IsOwner, IsAdmin
 from .serializers import CustomUserSerializer, PaymentSerializer, PaymentCreateSerializer, ChangePasswordSerializer, \
     CustomUserRestrictedSerializer
 
@@ -96,7 +96,7 @@ class ChangePasswordView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         self.object = self.get_object()
-        print(f"kwargs: {kwargs}")
+        # print(f"kwargs: {kwargs}")
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -123,6 +123,8 @@ class ChangePasswordView(generics.UpdateAPIView):
 
 
 #############################################################################################################
+
+
 class CreatePaymentAPIView(generics.CreateAPIView):
     """
     Оплата урока или курса
@@ -311,3 +313,22 @@ class PaymentsListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ('course', 'lesson', 'cash', 'user', 'created_at')
     ordering_fields = ['course', 'lesson', 'cash', 'user', 'created_at', 'user']
+
+#############################################################################################################
+
+class CreatePeriodicTaskCheckInactiveUsers(generics.GenericAPIView):
+    serializer_class = CustomUserSerializer
+    queryset = CustomUser.objects.all()
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, *args, **kwargs):
+        from datetime import datetime as dt, timedelta
+        from users.admin_tools import enable_periodic_task
+        enable_periodic_task(every=20,
+                             period='seconds',
+                             name='check inactive users',
+                             task='users.tasks.check_inactive_users',
+                             expires=dt.now() + timedelta(seconds=30))
+
+        return Response({"status": 200, "message": "check task in admin tool"})

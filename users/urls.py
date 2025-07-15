@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshSlid
 from .views import (CustomUserRetrieveAPIView, CreatePaymentAPIView,
                     DeletePaymentAPIView, PaymentsListAPIView, UserCreateAPIView, UserListAPIView, UserDeleteAPIView,
                     CustomUserPartialUpdateAPIView, ChangePasswordView, BuyCourse, CheckCourseBought, BuyLesson,
-                    CheckLessonBought)
+                    CheckLessonBought, CreatePeriodicTaskCheckInactiveUsers)
 
 from users.apps import UsersConfig
 
@@ -29,4 +29,7 @@ urlpatterns = [
     path('check_course_bought_ok/<int:user>/<int:course>/', CheckCourseBought.as_view(), name='check_course_bought_ok'),
     path('check_lesson_bought_ok/<int:user>/<int:payment>/',
          CheckLessonBought.as_view(), name='check_lesson_bought_ok'),
+    path('enable_check_inactive_users/',
+         CreatePeriodicTaskCheckInactiveUsers.as_view(),
+         name='enable_check_inactive_users'),
 ]

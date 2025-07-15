@@ -3,7 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views import generic
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, generics, mixins
+from rest_framework import viewsets, generics, mixins, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +12,7 @@ from materials.models import Course, Lesson, Subscription
 from materials.paginators import CoursePaginator, LessonsPaginator
 from materials.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
 from materials.stripe_api import StripeAPI
+from materials.tasks import notify_users_of_course_updated
 from users.permissions import IsModerator, IsOwner
 
 
@@ -67,6 +68,36 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        """
+        Вызов задачи на отправку сообщения должен происходить в контроллере обновления курса:
+        когда курс обновлен — тем, кто подписан на обновления именно этого курса, отправляется письмо на почту.
+        """
+        course_id = kwargs.get('pk')
+        # print('='*100)
+        notify_users_of_course_updated.delay(course_id)
+        # print('(' * 100)
+        # subs = result.get()
+        # for s in subs:
+        #     print(s)
+
+
+        self.object = self.get_object()
+        # print(f"kwargs: {kwargs}")
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            super(CourseViewSet, self).update(request, *args, **kwargs)
+            response = {
+                'status': 'success',
+                'code': status.HTTP_200_OK,
+                'message': f'The course {str(self.object)} updated successfully',
+                'data': []
+            }
+
+            return Response(response)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CreateCourseProduct(generics.CreateAPIView):
     """
