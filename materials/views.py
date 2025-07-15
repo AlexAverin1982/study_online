@@ -1,5 +1,8 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views import generic
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, generics, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -8,15 +11,38 @@ from rest_framework.response import Response
 from materials.models import Course, Lesson, Subscription
 from materials.paginators import CoursePaginator, LessonsPaginator
 from materials.serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
+from materials.stripe_api import StripeAPI
 from users.permissions import IsModerator, IsOwner
 
 
 class CourseViewSet(viewsets.ModelViewSet):
+    """
+
+       create:
+       Добавление обучающего курса
+
+       retrieve:
+       Получить информацию по конкретному курсу
+
+       list:
+       Список обучающих курсов (опционально - номер страницы с результатами)
+
+       update:
+       Обновить информацию по конкретному курсу
+
+       partial_update:
+       Частично обновить информацию по конкретному курсу
+
+       delete:
+       Удалить курс
+
+    """
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
     permission_classes = [IsAuthenticated]
     pagination_class = CoursePaginator
 
+    @swagger_auto_schema(method='get', operation_description="Список уроков в курсе")
     @action(detail=True, methods=['get'])
     def lessons(self, request, pk=None):
         course = self.get_object()
@@ -28,7 +54,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create']:
-            self.permission_classes = [IsAuthenticated, ~IsModerator,]
+            self.permission_classes = [IsAuthenticated, ~IsModerator, ]
         elif self.action in ['retrieve', 'update']:
             self.permission_classes = (IsAuthenticated, IsModerator,)
         elif self.action in ['destroy']:
@@ -42,9 +68,63 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
+class CreateCourseProduct(generics.CreateAPIView):
+    """
+    формирование цены на покупку курса и механизма покупки
+    """
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = Course.objects.all()
+    """
+    владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
+
+    нужно наименование курса, его описание и цена
+    """
+
+    def post(self, *args, **kwargs):
+        course_id = self.request.data.get("course_id")
+        """
+        проверяем, существует ли указанный курс
+        """
+        course = get_object_or_404(Course, id=course_id)
+        """
+        проверяем, является ли пользователь владельцем указанного курса
+        """
+        # print(f"\n\ncourse.owner: {course.owner}, type: {type(course.owner)}")
+        if not course.owner or course.owner != self.request.user:
+            return Response({"status": 400, "message": "Вы не являетесь владельцем указанного курса"})
+
+        if course.product:
+            return Response({"status": 400, "message": "Такой продукт уже создан"})
+
+        price = self.request.data.get("price")
+        obj_price = course.price
+        if obj_price:
+            if price:  # the price specified in request is considered to be more actual than the one in object's field
+                course.price = price
+            else:
+                price = course.price
+        elif price:
+            course.price = price
+
+        api = StripeAPI()
+        product = api.create_product(course.name, course.description)
+        course.product = product['id']
+
+        if price:
+            stripe_price = api.create_price(product['id'], price)
+            course.stripe_price = stripe_price['id']
+        course.save()
+
+        return Response({"status": 200, "message": "продукт курса создан"})
+
+
 ##################################################################################################################
 
 class LessonCreateAPIView(generics.CreateAPIView):
+    """
+    Добавление урока в обучающий курс
+    """
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, ~IsModerator]
 
@@ -53,6 +133,9 @@ class LessonCreateAPIView(generics.CreateAPIView):
 
 
 class LessonListAPIView(generics.ListAPIView):
+    """
+    Список всех уроков на всех курсах
+    """
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsAuthenticated]
@@ -60,18 +143,27 @@ class LessonListAPIView(generics.ListAPIView):
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
+    """
+    Данные конкретного урока
+    """
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsAuthenticated, IsOwner | IsModerator]
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
+    """
+    Обновить данные урока
+    """
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsAuthenticated, IsOwner | IsModerator]
 
 
 class LessonPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixin):
+    """
+    Частично обновить данные урока
+    """
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwner | IsModerator]
@@ -81,11 +173,67 @@ class LessonPartialUpdateAPIView(generics.GenericAPIView, mixins.UpdateModelMixi
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
+    """
+    Удалить урок
+    """
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsAuthenticated, IsOwner]
 
+
+class CreateLessonProduct(generics.CreateAPIView):
+    """
+    формирование цены на покупку курса и механизма покупки
+    """
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+    queryset = Course.objects.all()
+    """
+    владелец курса создает на стороннем апи продукт курса для того, чтобы его можно было купить
+
+    нужно наименование курса, его описание и цена
+    """
+
+    def post(self, *args, **kwargs):
+        lesson_id = self.request.data.get("lesson_id")
+        """
+        проверяем, существует ли указанный урок
+        """
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        """
+        проверяем, является ли пользователь владельцем указанного курса
+        """
+        if not lesson.owner or lesson.owner != self.request.user:
+            return Response({"status": 400, "message": "Вы не являетесь владельцем указанного урока"})
+
+        if lesson.product:
+            return Response({"status": 400, "message": "Такой продукт уже создан"})
+
+        price = self.request.data.get("price")
+        obj_price = lesson.price
+        if obj_price:
+            if price:  # the price specified in request is considered to be more actual than the one in object's field
+                lesson.price = price
+            else:
+                price = lesson.price
+        elif price:
+            lesson.price = price
+
+        api = StripeAPI()
+        product = api.create_product(lesson.name, lesson.description)
+        lesson.product = product['id']
+
+        if price:
+            stripe_price = api.create_price(product['id'], price)
+            lesson.stripe_price = stripe_price['id']
+        lesson.save()
+
+        return Response({"status": 200, "message": "продукт урока создан"})
+
 class SubscriptionCreateAPIView(generics.CreateAPIView):
+    """
+    Добавление/удаление подписки на обновления обучающего курса
+    """
     serializer_class = SubscriptionSerializer
     # permission_classes = [IsAuthenticated, ~IsModerator]
     permission_classes = [IsAuthenticated]
@@ -108,6 +256,3 @@ class SubscriptionCreateAPIView(generics.CreateAPIView):
             message = "подписка добавлена"
 
         return Response({"message": message})
-
-
-

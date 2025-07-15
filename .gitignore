@@ -147,3 +147,4 @@ cython_debug/
 .idea
 .idea/
 .idea/workspace.xml
+stripe

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
+from rest_framework.generics import get_object_or_404
 from django.db import models
 
 
@@ -12,6 +13,9 @@ class CustomUser(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    courses_bought = models.ManyToManyField('materials.Course', verbose_name='Купленные курсы')
+    lessons_bought = models.ManyToManyField('materials.Lesson', verbose_name='Купленные уроки')
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
@@ -23,13 +27,6 @@ class CustomUser(AbstractUser):
         verbose_name_plural = "пользователи"
         ordering = ["last_name", "first_name"]
         # permissions = [('can_block_user', 'Can block and unblock users'), ]
-
-
-class UsersControl(models.Model):
-    users = models.ManyToManyField(CustomUser, verbose_name="Пользователи, которым можно заходить в приложение")
-
-    class Meta:
-        verbose_name = "Управление пользователями"
 
 
 class Payment(models.Model):
@@ -46,16 +43,29 @@ class Payment(models.Model):
 
     sum = models.FloatField(blank=False, verbose_name='Сумма', validators=[MinValueValidator(100.0)])
 
+    session = models.CharField(verbose_name='Идентификатор сессии покупки', blank=True)
+
     def clean(self):
         from django.core.exceptions import ValidationError
+        from materials.models import Lesson
         if self.lesson:
+            print(f"self.lesson: {self.lesson.id}")
+            lesson_obj = Lesson.objects.get(id=self.lesson.id)
+            # lesson_obj = get_object_or_404(Lesson, id=self.lesson)
+            print("-" * 100)
+            print(f"lesson_obj.course: {lesson_obj.course}")
+
             if self.course:
-                from materials.models import Lesson
-                lesson_obj = Lesson.objects.get(id=self.lesson)
                 if lesson_obj.course != self.course:
                     raise ValidationError('Курс оплаченного урока указан неверно')
             else:
-                raise ValidationError('Курс оплаченного урока не указан')
+
+                if lesson_obj.course:
+
+
+                    self.course = lesson_obj.course
+                else:
+                    raise ValidationError('Курс оплаченного урока не указан')
         else:
             if not self.course:
                 raise ValidationError("Необходимо указать либо оплачиваемый курс, либо курс и входящий в него урок.")
@@ -65,5 +75,6 @@ class Payment(models.Model):
 
     # overriden to make sure the clean() method is called whenever object is to be created
     def save(self, *args, **kwargs):
+        self.clean()
         self.full_clean()  # here, complete validation is performed
         super().save(*args, **kwargs)  # then model does the rest

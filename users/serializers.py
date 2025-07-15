@@ -45,6 +45,10 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         CustomUser.objects.get(id=user_id)
         lesson_id = fields.get('lesson')
         course_id = fields.get('course')
+
+        print(f"\n\nlesson: {lesson_id}")
+        print(f"course_id: {course_id}\n\n")
+
         sum = fields.get('sum', 0)
         if lesson_id:
             if course_id:
