@@ -27,6 +27,38 @@ AUTH_PASSWORD_VALIDATORS = [
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CACHE_ENABLED = False
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+    }
+}
+
+# Настройки для Celery
+
+# URL-адрес брокера сообщений
+CELERY_BROKER_URL = 'redis://localhost:6379/0' # Redis, который по умолчанию работает на порту 6379
+
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "Europe/Moscow"
+
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULE = {
+    'task-name': {
+        'task': 'users.tasks.check_inactive_users',  # Путь к задаче
+        'schedule': timedelta(days=1),  # Расписание выполнения задачи
+    },
+}
+
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SECURE = False
@@ -88,6 +120,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django_celery_beat',
     "rest_framework_simplejwt",
     "drf_yasg",
     "django_filters",
